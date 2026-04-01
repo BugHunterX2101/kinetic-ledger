@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Kinetic Ledger</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #131314;
+        --surface-low: #1c1b1c;
+        --surface-high: #2a2a2b;
+        --surface-bright: #3a393a;
+        --primary: #dbfcff;
+        --primary-strong: #00f0ff;
+        --secondary: #ffabf3;
+        --outline: rgba(59, 73, 75, 0.25);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: var(--primary);
+        font-family: "Inter", sans-serif;
+        background:
+          radial-gradient(circle at 8% 10%, rgba(0, 219, 233, 0.13), transparent 34%),
+          radial-gradient(circle at 88% 12%, rgba(255, 171, 243, 0.1), transparent 38%),
+          linear-gradient(180deg, #131314, #151518 48%, #111113);
+        min-height: 100vh;
+      }
+
+      .grid-backdrop {
+        position: fixed;
+        inset: -20% 0 0;
+        pointer-events: none;
+        opacity: 0.25;
+        background-image:
+          linear-gradient(to right, rgba(0, 240, 255, 0.06) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(0, 240, 255, 0.06) 1px, transparent 1px);
+        background-size: 36px 36px;
+        transform: perspective(1100px) rotateX(72deg);
+        -webkit-mask-image: linear-gradient(to bottom, transparent 4%, black 34%, transparent 88%);
+        mask-image: linear-gradient(to bottom, transparent 4%, black 34%, transparent 88%);
+      }
+
+      .shell {
+        position: relative;
+        z-index: 2;
+        display: grid;
+        grid-template-columns: 178px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      aside {
+        background: rgba(12, 16, 22, 0.96);
+        background-image: linear-gradient(180deg, rgba(11, 15, 22, 0.98), rgba(15, 20, 29, 0.96));
+        -webkit-backdrop-filter: blur(14px);
+        backdrop-filter: blur(14px);
+        padding: 24px 0 18px;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid rgba(0, 240, 255, 0.1);
+      }
+
+      .logo {
+        font-family: "Space Grotesk", sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.11em;
+        font-weight: 700;
+        font-size: 28px;
+        line-height: 1.5;
+        margin-bottom: 28px;
+        text-decoration: none;
+        color: var(--primary-strong);
+      }
+
+      .rail-head {
+        font-family: "Space Mono", monospace;
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        color: rgba(66, 246, 255, 0.96);
+        margin-bottom: 16px;
+        padding: 0 18px;
+      }
+
+      .side-nav {
+        display: grid;
+        gap: 4px;
+      }
+
+      .rail-bottom {
+        margin-top: 8px;
+      }
+
+      .deploy-btn {
+        margin: 14px 16px 0;
+        border-radius: 5px;
+        box-shadow: 0 0 24px -10px rgba(0, 240, 255, 0.95);
+      }
+
+      .nav-item {
+        font-family: "Space Grotesk", sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: rgba(219, 252, 255, 0.5);
+        font-size: 10px;
+        margin: 0;
+        padding: 10px 18px;
+        border-left: 4px solid transparent;
+      }
+
+      .nav-item.active {
+        color: var(--primary-strong);
+        border-left-color: var(--primary-strong);
+        background: linear-gradient(90deg, rgba(0, 240, 255, 0.22), transparent 82%);
+      }
+
+      .nav-item.muted {
+        color: rgba(206, 222, 232, 0.48);
+        font-size: 9px;
+      }
+
+      .operator-card {
+        margin: auto 16px 0;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(17, 24, 34, 0.86);
+        border-radius: 8px;
+        padding: 10px;
+        display: grid;
+        grid-template-columns: 28px 1fr;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .operator-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: 1px solid rgba(0, 240, 255, 0.44);
+        display: grid;
+        place-items: center;
+        color: #44f7ff;
+        font-family: "Space Mono", monospace;
+        font-size: 13px;
+      }
+
+      .operator-name {
+        font-family: "Space Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        color: #d4e6ef;
+      }
+
+      .operator-role {
+        margin-top: 2px;
+        font-family: "Space Mono", monospace;
+        font-size: 9px;
+        color: rgba(212, 230, 239, 0.66);
+      }
+
+      main {
+        padding: 18px 18px 28px;
+      }
+
+      .top-strip {
+        margin-top: 0;
+        height: 56px;
+        display: grid;
+        grid-template-columns: auto auto auto auto 1fr auto;
+        align-items: center;
+        gap: 14px;
+        padding: 0 14px;
+        background: rgba(11, 17, 25, 0.86);
+        border: 1px solid rgba(0, 240, 255, 0.08);
+      }
+
+      .top-strip a {
+        text-decoration: none;
+        color: rgba(214, 232, 241, 0.76);
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-size: 10px;
+      }
+
+      .top-strip .active-link {
+        color: var(--primary-strong);
+      }
+
+      .query-box {
+        justify-self: stretch;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(14, 19, 27, 0.92);
+        color: rgba(180, 198, 211, 0.78);
+        font-family: "Space Mono", monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 9px 12px;
+      }
+
+      .top {
+        display: none;
+      }
+
+      .top {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: end;
+        gap: 20px;
+      }
+
+      .eyebrow {
+        font-family: "Space Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 0.22em;
+        opacity: 0.75;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 8px 0 0;
+        font-family: "Space Grotesk", sans-serif;
+        font-size: clamp(34px, 5vw, 52px);
+        letter-spacing: -0.04em;
+        text-transform: uppercase;
+        line-height: 0.95;
+      }
+
+      .status-box {
+        padding: 12px 14px;
+        border-radius: 10px;
+        background: rgba(53, 52, 54, 0.55);
+        background-image: linear-gradient(145deg, rgba(53, 52, 54, 0.6), rgba(28, 27, 28, 0.38));
+        box-shadow: 0 24px 55px -24px rgba(0, 219, 233, 0.38);
+        min-width: 240px;
+      }
+
+      .glass {
+        margin-top: 14px;
+        background: rgba(28, 27, 28, 0.7);
+        background-image: linear-gradient(150deg, rgba(53, 52, 54, 0.25), rgba(28, 27, 28, 0.4));
+        border-radius: 12px;
+        -webkit-backdrop-filter: blur(14px);
+        backdrop-filter: blur(14px);
+        box-shadow: 0 28px 60px -30px rgba(0, 219, 233, 0.42);
+      }
+
+      .auth {
+        display: none;
+        grid-template-columns: 1fr 1fr auto;
+        gap: 10px;
+        padding: 14px;
+      }
+
+      .filters {
+        display: grid;
+        grid-template-columns: 1.4fr repeat(4, 1fr) auto auto auto;
+        gap: 10px;
+        padding: 14px;
+      }
+
+      .page-records.filters {
+        background: rgba(21, 26, 35, 0.84);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .records-filter-input,
+      .records-filter-select {
+        height: 42px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(16, 21, 30, 0.94);
+        color: #b9cddd;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 11px;
+      }
+
+      .records-filter-btn {
+        height: 42px;
+      }
+
+      .panels {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        padding: 14px;
+        align-items: start;
+      }
+
+      .page-overview {
+        position: relative;
+      }
+
+      #overviewPanels {
+        margin-top: 8px;
+      }
+
+      #overviewPanels .panel-block:nth-child(2) {
+        margin-top: 10px;
+      }
+
+      #overviewPanels .panel-block:nth-child(3) {
+        margin-top: 4px;
+      }
+
+      .panel-block {
+        background: rgba(42, 42, 43, 0.58);
+        -webkit-backdrop-filter: blur(14px);
+        backdrop-filter: blur(14px);
+        border-radius: 10px;
+        padding: 12px;
+      }
+
+      .mini-list {
+        margin: 10px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .mini-list li {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 7px 0;
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+      }
+
+      .mini-table th,
+      .mini-table td {
+        padding: 8px 7px;
+        font-size: 11px;
+      }
+
+      .users-wrap {
+        padding: 14px;
+      }
+
+      .users-form-top {
+        margin-top: 10px;
+      }
+
+      .users-table {
+        margin-top: 12px;
+      }
+
+      .users-form {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr 1fr auto;
+        gap: 10px;
+      }
+
+      .support-form {
+        display: grid;
+        grid-template-columns: 1.2fr 2fr 0.8fr auto;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .logs-table {
+        margin-top: 12px;
+      }
+
+      .logs-tools {
+        margin-top: 10px;
+      }
+
+      .hidden {
+        display: none;
+      }
+      
+      .page-fragment {
+        display: none;
+      }
+
+      .page-fragment.active {
+        display: block;
+      }
+
+      .nav-button {
+        width: 100%;
+        text-align: left;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        padding: 0;
+        cursor: pointer;
+      }
+
+      .settings-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .settings-item {
+        background: rgba(42, 42, 43, 0.58);
+        -webkit-backdrop-filter: blur(14px);
+        backdrop-filter: blur(14px);
+        border-radius: 10px;
+        padding: 12px;
+        font-family: "Space Mono", monospace;
+        font-size: 12px;
+      }
+
+      .settings-refresh-btn {
+        margin-top: 12px;
+      }
+
+      input,
+      button,
+      select {
+        border: 0;
+        border-radius: 8px;
+        padding: 11px 12px;
+        font-family: "Space Mono", monospace;
+        font-size: 12px;
+      }
+
+      input,
+      select {
+        color: var(--primary);
+        background: rgba(58, 57, 58, 0.6);
+        border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+        transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+      }
+
+      input:focus,
+      select:focus {
+        outline: none;
+        border-bottom-color: rgba(0, 240, 255, 0.95);
+        box-shadow: inset 0 -2px 0 rgba(0, 240, 255, 0.8), 0 0 20px -10px rgba(0, 240, 255, 0.8);
+        background: rgba(58, 57, 58, 0.72);
+      }
+
+      button {
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: #002022;
+        background: linear-gradient(135deg, #dbfcff, #00f0ff);
+        cursor: pointer;
+      }
+
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1.4fr;
+        gap: 14px;
+        padding: 14px;
+      }
+
+      .metric {
+        background: rgba(42, 42, 43, 0.58);
+        -webkit-backdrop-filter: blur(14px);
+        backdrop-filter: blur(14px);
+        border-radius: 10px;
+        padding: 14px;
+        min-height: 128px;
+      }
+
+      .kpi {
+        margin-top: 8px;
+        font-family: "Space Grotesk", sans-serif;
+        font-size: clamp(24px, 3vw, 35px);
+        letter-spacing: -0.02em;
+      }
+
+      .spark {
+        margin-top: 10px;
+        height: 34px;
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+      }
+
+      .spark span {
+        align-self: end;
+        background: linear-gradient(180deg, rgba(0, 240, 255, 0.25), rgba(0, 240, 255, 0.75));
+        border-radius: 2px;
+      }
+
+      .spark.s1 span:nth-child(1) { height: 22%; }
+      .spark.s1 span:nth-child(2) { height: 34%; }
+      .spark.s1 span:nth-child(3) { height: 28%; }
+      .spark.s1 span:nth-child(4) { height: 54%; }
+      .spark.s1 span:nth-child(5) { height: 45%; }
+      .spark.s1 span:nth-child(6) { height: 66%; }
+      .spark.s1 span:nth-child(7) { height: 90%; }
+
+      .spark.s2 span:nth-child(1) { height: 44%; }
+      .spark.s2 span:nth-child(2) { height: 31%; }
+      .spark.s2 span:nth-child(3) { height: 52%; }
+      .spark.s2 span:nth-child(4) { height: 29%; }
+      .spark.s2 span:nth-child(5) { height: 42%; }
+      .spark.s2 span:nth-child(6) { height: 25%; }
+      .spark.s2 span:nth-child(7) { height: 37%; }
+
+      .spark.s3 span:nth-child(1) { height: 36%; }
+      .spark.s3 span:nth-child(2) { height: 44%; }
+      .spark.s3 span:nth-child(3) { height: 38%; }
+      .spark.s3 span:nth-child(4) { height: 58%; }
+      .spark.s3 span:nth-child(5) { height: 64%; }
+      .spark.s3 span:nth-child(6) { height: 78%; }
+      .spark.s3 span:nth-child(7) { height: 93%; }
+
+      .overview-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 18px;
+      }
+
+      .activity-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .activity-table td,
+      .activity-table th {
+        padding: 12px 8px;
+        font-size: 11px;
+      }
+
+      .right-stack {
+        display: grid;
+        gap: 14px;
+      }
+
+      .health-line {
+        margin-top: 8px;
+      }
+
+      .health-line label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: #b7c9d8;
+      }
+
+      .health-line .bar {
+        margin-top: 5px;
+        height: 3px;
+        background: rgba(255, 255, 255, 0.14);
+      }
+
+      .health-line .bar span {
+        display: block;
+        height: 100%;
+        background: #2ff2ff;
+      }
+
+      .bar-84 {
+        width: 84%;
+      }
+
+      .bar-74 {
+        width: 74%;
+      }
+
+      .analytics-layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 14px;
+      }
+
+      .chart-box {
+        min-height: 290px;
+        background: linear-gradient(180deg, rgba(38, 47, 60, 0.18), rgba(27, 33, 43, 0.45));
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        position: relative;
+      }
+
+      .chart-box::before {
+        content: "";
+        position: absolute;
+        inset: 14px;
+        background-image: linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px);
+        background-size: 100% 56px;
+      }
+
+      .chart-box .month-row {
+        position: absolute;
+        bottom: 12px;
+        left: 16px;
+        right: 16px;
+        display: flex;
+        justify-content: space-between;
+        font-family: "Space Mono", monospace;
+        font-size: 9px;
+        color: rgba(210, 226, 235, 0.74);
+        letter-spacing: 0.1em;
+      }
+
+      .monthly-title {
+        margin: 8px 0 10px;
+        font-family: "Space Grotesk", sans-serif;
+      }
+
+      .records-wrap {
+        margin-top: 16px;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .records-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        background: rgba(34, 41, 50, 0.52);
+      }
+
+      .pager {
+        display: inline-flex;
+        gap: 8px;
+      }
+
+      .pager button {
+        min-width: 44px;
+        height: 32px;
+        font-size: 10px;
+        letter-spacing: 0.1em;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      thead tr {
+        background: rgba(36, 43, 51, 0.56);
+      }
+
+      th {
+        text-align: left;
+        font-family: "Space Grotesk", sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-size: 9px;
+        font-weight: 500;
+        color: rgba(198, 214, 224, 0.76);
+        padding: 12px 11px;
+      }
+
+      td {
+        padding: 10px 11px;
+        font-size: 11px;
+        font-family: "Space Mono", monospace;
+        color: #d2e0ea;
+      }
+
+      tbody tr:nth-child(odd) {
+        background: rgba(255, 255, 255, 0.01);
+      }
+
+      #recordsBody tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      }
+
+      #recordsBody td:nth-child(2),
+      #recordsBody td:nth-child(4),
+      #recordsBody td:nth-child(5) {
+        font-family: "Space Grotesk", sans-serif;
+        letter-spacing: 0.04em;
+      }
+
+      .badge {
+        display: inline-flex;
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        padding: 3px 7px;
+        border-radius: 2px;
+        border: 1px solid rgba(59, 73, 75, 0.45);
+        min-width: 72px;
+        justify-content: center;
+      }
+
+      .verified {
+        color: #00f0ff;
+        background: rgba(0, 240, 255, 0.12);
+      }
+
+      .flagged {
+        color: #ffabf3;
+        background: rgba(255, 171, 243, 0.12);
+      }
+
+      .pending {
+        color: #e2e2e2;
+        background: rgba(226, 226, 226, 0.1);
+      }
+
+      .status-line {
+        margin-top: 8px;
+        color: var(--secondary);
+      }
+
+      .amount-head {
+        text-align: right;
+      }
+
+      .amount-cell {
+        text-align: right;
+      }
+
+      .income {
+        color: #00f0ff;
+      }
+
+      .expense {
+        color: #ffabf3;
+      }
+
+      .btn-muted {
+        color: var(--primary);
+        background: rgba(58, 57, 58, 0.7);
+      }
+
+      .filters-disabled {
+        opacity: 0.55;
+      }
+
+      @media (max-width: 1024px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+
+        aside {
+          display: none;
+        }
+
+        .metrics {
+          grid-template-columns: 1fr;
+        }
+
+        .auth {
+          grid-template-columns: 1fr;
+        }
+
+        .filters {
+          grid-template-columns: 1fr;
+        }
+
+        .panels {
+          grid-template-columns: 1fr;
+        }
+
+        .overview-grid,
+        .analytics-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .top-strip {
+          grid-template-columns: 1fr;
+          height: auto;
+          padding: 12px;
+        }
+
+        .users-form {
+          grid-template-columns: 1fr;
+        }
+
+        .support-form {
+          grid-template-columns: 1fr;
+        }
+        
+        .settings-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="grid-backdrop"></div>
+    <div class="shell">
+      <aside>
+        <a class="logo" href="/hero.html">The Kinetic Ledger</a>
+        <div class="rail-head">System Access</div>
+        <div class="side-nav">
+          <div class="nav-item active"><button class="nav-button" data-page="overview" type="button">Overview</button></div>
+          <div class="nav-item"><button class="nav-button" data-page="records" type="button">Records</button></div>
+          <div class="nav-item"><button class="nav-button" data-page="analytics" type="button">Analytics</button></div>
+          <div class="nav-item"><button class="nav-button" data-page="users" type="button">Users</button></div>
+          <div class="nav-item"><button class="nav-button" data-page="settings" type="button">Settings</button></div>
+        </div>
+        <div class="operator-card">
+          <div class="operator-icon">N</div>
+          <div>
+            <div class="operator-name">ADMIN_OPERATOR</div>
+            <div class="operator-role">ROLE: ADMIN</div>
+          </div>
+        </div>
+        <div class="nav-item muted rail-bottom"><button class="nav-button" data-page="support" id="supportNavBtn" type="button">Support</button></div>
+        <div class="nav-item muted"><button class="nav-button" data-page="logs" id="logsNavBtn" type="button">Logs</button></div>
+        <button class="launch-btn deploy-btn" id="deployNodeBtn" type="button">Deploy Node</button>
+      </aside>
+
+      <main>
+        <section class="top">
+          <div>
+            <div class="eyebrow" id="topContext">Operational Database / Nodes / v4.2</div>
+            <h1 id="pageTitle">Overview</h1>
+          </div>
+          <div class="status-box">
+            <div class="eyebrow" id="sessionRole">Session: unauthenticated</div>
+            <div class="eyebrow">Role: <span id="roleChip">viewer</span> | Health: <span id="healthChip">Unknown</span></div>
+            <div class="eyebrow status-line" id="statusText">Awaiting connection...</div>
+          </div>
+        </section>
+
+        <section class="top-strip">
+          <a class="active-link" href="/hero.html">Home</a>
+          <a href="/features.html">Features</a>
+          <a href="/api.html">API</a>
+          <a href="/security.html">Security</a>
+          <input class="query-box" title="Query ledger" value="Query ledger..." readonly />
+          <button class="launch-btn" type="button">Launch Terminal</button>
+        </section>
+
+        <section class="glass auth">
+          <input id="email" type="email" placeholder="email" value="admin@kinetic.local" />
+          <input id="password" type="password" placeholder="password" value="Admin@123" />
+          <button id="connectBtn" type="button">Connect API</button>
+        </section>
+
+        <section class="glass metrics page-fragment active page-overview" id="overviewMetrics">
+          <article class="metric">
+            <div class="eyebrow">Total Income</div>
+            <div class="kpi" id="incomeValue">0.00</div>
+            <div class="spark s1"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+          </article>
+          <article class="metric">
+            <div class="eyebrow">Total Expenses</div>
+            <div class="kpi" id="expenseValue">0.00</div>
+            <div class="spark s2"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+          </article>
+          <article class="metric">
+            <div class="eyebrow">Net Balance</div>
+            <div class="kpi" id="netValue">0.00</div>
+            <div class="spark s3"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+          </article>
+        </section>
+
+        <section class="glass panels page-fragment active page-overview" id="overviewPanels">
+          <div class="overview-grid">
+            <article class="panel-block">
+              <div class="eyebrow">Recent Activity</div>
+              <table class="activity-table">
+                <thead>
+                  <tr>
+                    <th>Transaction Hash</th>
+                    <th>Entity</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="recentActivityBody"></tbody>
+              </table>
+            </article>
+            <div class="right-stack">
+              <article class="panel-block">
+                <div class="eyebrow">Network Health</div>
+                <div class="health-line"><label><span>Ledger Latency</span><span>42ms</span></label><div class="bar"><span class="bar-84"></span></div></div>
+                <div class="health-line"><label><span>Node Saturation</span><span>74%</span></label><div class="bar"><span class="bar-74"></span></div></div>
+                <div class="health-line"><label><span>Encryption</span><span>AES-256</span></label></div>
+              </article>
+              <article class="panel-block">
+                <div class="eyebrow">Terminal Alpha</div>
+                <p class="mini-list">Secure encrypted bridge for direct node-to-node communication.</p>
+              </article>
+              <article class="panel-block">
+                <div class="eyebrow">Security Alert</div>
+                <p class="mini-list">Potential brute-force attempt detected on endpoint beta. Isolation protocol engaged.</p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="glass filters page-fragment page-records" id="filtersPanel">
+          <input id="qFilter" class="records-filter-input" type="text" placeholder="query ledger hash or node id..." />
+          <select id="typeFilter" class="records-filter-select" title="Filter by type">
+            <option value="">type: all</option>
+            <option value="income">income</option>
+            <option value="expense">expense</option>
+          </select>
+          <input id="categoryFilter" class="records-filter-input" type="text" placeholder="transaction class" />
+          <input id="fromFilter" class="records-filter-input" type="date" title="Filter records from date" />
+          <input id="toFilter" class="records-filter-input" type="date" title="Filter records to date" />
+          <button id="applyFiltersBtn" class="records-filter-btn" type="button">Apply</button>
+          <button id="resetFiltersBtn" class="btn-muted records-filter-btn" type="button">Reset</button>
+          <button id="exportBtn" class="btn-muted records-filter-btn" type="button">Export</button>
+        </section>
+        
+        <section class="glass panels page-fragment page-analytics" id="analyticsPanels">
+          <div class="analytics-layout">
+            <article class="panel-block">
+              <div class="eyebrow">Trailing 12 Months</div>
+              <h3 class="monthly-title">Monthly Aggregates</h3>
+              <div class="chart-box">
+                <div class="month-row"><span>JAN</span><span>FEB</span><span>MAR</span><span>APR</span><span>MAY</span><span>JUN</span><span>JUL</span><span>AUG</span><span>SEP</span><span>OCT</span><span>NOV</span><span>DEC</span></div>
+              </div>
+            </article>
+            <div class="right-stack">
+              <article class="panel-block">
+                <div class="eyebrow">By Category</div>
+                <table class="mini-table">
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th>Income</th>
+                      <th>Expense</th>
+                    </tr>
+                  </thead>
+                  <tbody id="categoryBody"></tbody>
+                </table>
+              </article>
+              <article class="panel-block">
+                <div class="eyebrow">Trends (12M)</div>
+                <table class="mini-table">
+                  <thead>
+                    <tr>
+                      <th>Month</th>
+                      <th>Income</th>
+                      <th>Expense</th>
+                    </tr>
+                  </thead>
+                  <tbody id="trendsBody"></tbody>
+                </table>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="glass records-wrap page-fragment page-records" id="recordsPage">
+          <table>
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Ledger Hash</th>
+                <th>Date</th>
+                <th>Counterparty</th>
+                <th>Category</th>
+                <th>Type</th>
+                <th class="amount-head">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="recordsBody"></tbody>
+          </table>
+          <div class="records-footer">
+            <div class="eyebrow" id="pageMeta">Showing 0-0 of 0 | Page 1/1</div>
+            <div class="pager">
+              <button id="prevPageBtn" class="btn-muted" type="button">Previous</button>
+              <button id="nextPageBtn" class="btn-muted" type="button">Next</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="glass users-wrap page-fragment page-users" id="usersPanel">
+          <div class="eyebrow">Admin User Management</div>
+          <div class="users-form users-form-top" id="usersForm">
+            <input id="newUserEmail" type="email" placeholder="new user email" />
+            <input id="newUserPassword" type="text" placeholder="temporary password" value="TempPass@123" />
+            <select id="newUserRole" title="New user role">
+              <option value="viewer">viewer</option>
+              <option value="analyst">analyst</option>
+              <option value="admin">admin</option>
+            </select>
+            <button id="createUserBtn" type="button">Create User</button>
+          </div>
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Active</th>
+              </tr>
+            </thead>
+            <tbody id="usersBody"></tbody>
+          </table>
+        </section>
+
+        <section class="glass users-wrap page-fragment page-settings" id="settingsPage">
+          <div class="eyebrow">Settings</div>
+          <div class="settings-grid">
+            <div class="settings-item">Email: <span id="settingsEmail">-</span></div>
+            <div class="settings-item">Role: <span id="settingsRole">-</span></div>
+            <div class="settings-item">Status: <span id="settingsStatus">-</span></div>
+            <div class="settings-item">Member Since: <span id="settingsCreated">-</span></div>
+          </div>
+          <button id="refreshSettingsBtn" class="btn-muted settings-refresh-btn" type="button">Refresh Settings</button>
+        </section>
+
+        <section class="glass users-wrap page-fragment page-support" id="supportPage">
+          <div class="eyebrow">Support Desk</div>
+          <div class="support-form">
+            <input id="supportSubject" type="text" placeholder="ticket subject" />
+            <input id="supportMessage" type="text" placeholder="describe the issue" />
+            <select id="supportPriority" title="Support priority">
+              <option value="normal">normal</option>
+              <option value="high">high</option>
+              <option value="low">low</option>
+            </select>
+            <button id="submitSupportBtn" type="button">Submit</button>
+          </div>
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>Created</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Subject</th>
+              </tr>
+            </thead>
+            <tbody id="supportBody"></tbody>
+          </table>
+        </section>
+
+        <section class="glass users-wrap page-fragment page-logs" id="logsPage">
+          <div class="eyebrow">System Logs</div>
+          <div class="logs-tools">
+            <button id="refreshLogsBtn" class="btn-muted" type="button">Refresh Logs</button>
+          </div>
+          <table class="users-table logs-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Level</th>
+                <th>Event</th>
+                <th>Message</th>
+              </tr>
+            </thead>
+            <tbody id="logsBody"></tbody>
+          </table>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const API_BASE = "/api/v1";
+      let token = "";
+      let currentRole = "viewer";
+      let currentPage = 1;
+      let activePage = "overview";
+      const perPage = 10;
+
+      const statusText = document.getElementById("statusText");
+      const sessionRole = document.getElementById("sessionRole");
+      const recordsBody = document.getElementById("recordsBody");
+      const filtersPanel = document.getElementById("filtersPanel");
+      const pageMeta = document.getElementById("pageMeta");
+      const prevPageBtn = document.getElementById("prevPageBtn");
+      const nextPageBtn = document.getElementById("nextPageBtn");
+      const recentActivityBody = document.getElementById("recentActivityBody");
+      const categoryBody = document.getElementById("categoryBody");
+      const trendsBody = document.getElementById("trendsBody");
+      const usersPanel = document.getElementById("usersPanel");
+      const usersBody = document.getElementById("usersBody");
+      const usersForm = document.getElementById("usersForm");
+      const roleChip = document.getElementById("roleChip");
+      const healthChip = document.getElementById("healthChip");
+      const topContext = document.getElementById("topContext");
+      const pageTitle = document.getElementById("pageTitle");
+      const logsBody = document.getElementById("logsBody");
+      const supportBody = document.getElementById("supportBody");
+      const qFilter = document.getElementById("qFilter");
+      const typeFilter = document.getElementById("typeFilter");
+      const categoryFilter = document.getElementById("categoryFilter");
+      const fromFilter = document.getElementById("fromFilter");
+      const toFilter = document.getElementById("toFilter");
+
+      function setText(el, value) {
+        if (el) {
+          el.textContent = value;
+        }
+      }
+
+      function fmtCurrency(num) {
+        return Number(num).toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+      }
+
+      function statusBadge(status) {
+        const normalized = (status || "pending").toLowerCase();
+        const cls = normalized === "verified" ? "verified" : normalized === "flagged" ? "flagged" : "pending";
+        return `<span class="badge ${cls}">${normalized}</span>`;
+      }
+
+      async function api(path, options = {}) {
+        const response = await fetch(`${API_BASE}${path}`, {
+          ...options,
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(options.headers || {}),
+          },
+        });
+
+        const body = await response.json();
+        if (!response.ok || !body.success) {
+          throw new Error(body.error?.message || "Request failed");
+        }
+        return body;
+      }
+
+      function buildRecordParams(includePage = true) {
+        const params = new URLSearchParams({
+          ...(includePage ? { page: String(currentPage), per_page: String(perPage) } : {}),
+        });
+
+        if (currentRole !== "viewer") {
+          const q = qFilter.value.trim();
+          const type = typeFilter.value;
+          const category = categoryFilter.value.trim();
+          const from = fromFilter.value;
+          const to = toFilter.value;
+
+          if (q) params.set("q", q);
+          if (type) params.set("type", type);
+          if (category) params.set("category", category);
+          if (from) params.set("from", from);
+          if (to) params.set("to", to);
+        }
+
+        return params;
+      }
+
+      function updatePager(meta, visibleCount) {
+        const total = Number(meta?.total || 0);
+        const page = Number(meta?.page || currentPage);
+        const pageSize = Number(meta?.per_page || perPage);
+        const totalPages = Math.max(Math.ceil(total / pageSize), 1);
+        const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
+        const end = total === 0 ? 0 : start + visibleCount - 1;
+
+        pageMeta.textContent = `Showing ${start}-${end} of ${total} | Page ${page}/${totalPages}`;
+        prevPageBtn.disabled = page <= 1;
+        nextPageBtn.disabled = page >= totalPages;
+      }
+
+      async function loadDashboard() {
+        const summary = await api("/dashboard/summary");
+        document.getElementById("incomeValue").textContent = fmtCurrency(summary.data.total_income);
+        document.getElementById("expenseValue").textContent = fmtCurrency(summary.data.total_expenses);
+        document.getElementById("netValue").textContent = fmtCurrency(summary.data.net_balance);
+
+        const params = buildRecordParams();
+
+        const records = await api(`/records?${params.toString()}`);
+        if (!records.data.length && currentPage > 1) {
+          currentPage -= 1;
+          return loadDashboard();
+        }
+
+        recordsBody.innerHTML = records.data
+          .map(
+            (record) => `
+              <tr>
+                <td>${statusBadge(record.status)}</td>
+                <td>${record.ledger_hash || "-"}</td>
+                <td>${record.date}</td>
+                <td>${record.counterparty || "-"}</td>
+                <td>${record.category}</td>
+                <td>${record.type}</td>
+                <td class="amount-cell ${record.type === "expense" ? "expense" : "income"}">
+                  ${record.type === "expense" ? "-" : "+"} ${fmtCurrency(record.amount)}
+                </td>
+              </tr>
+            `
+          )
+          .join("");
+
+        updatePager(records.meta, records.data.length);
+      }
+
+      async function loadSettings() {
+        if (!token) {
+          return;
+        }
+
+        const me = await api("/users/me");
+        document.getElementById("settingsEmail").textContent = me.data.email;
+        document.getElementById("settingsRole").textContent = me.data.role;
+        document.getElementById("settingsStatus").textContent = me.data.is_active ? "active" : "inactive";
+        document.getElementById("settingsCreated").textContent = me.data.created_at;
+      }
+
+      async function loadInsights() {
+        const recent = await api("/dashboard/recent?limit=10");
+        recentActivityBody.innerHTML = recent.data
+          .map(
+            (row) =>
+              `<tr><td>${row.ledger_hash || "-"}</td><td>${row.counterparty || row.category || "Node"}</td><td>${statusBadge(row.status || "verified")}</td></tr>`
+          )
+          .join("");
+
+        if (currentRole === "viewer") {
+          categoryBody.innerHTML = '<tr><td colspan="3">Analyst/Admin only</td></tr>';
+          trendsBody.innerHTML = '<tr><td colspan="3">Analyst/Admin only</td></tr>';
+          return;
+        }
+
+        const category = await api("/dashboard/by-category");
+        categoryBody.innerHTML = category.data
+          .map(
+            (row) =>
+              `<tr><td>${row.category}</td><td>${fmtCurrency(row.income)}</td><td>${fmtCurrency(row.expense)}</td></tr>`
+          )
+          .join("");
+
+        const trends = await api("/dashboard/trends");
+        trendsBody.innerHTML = trends.data
+          .map(
+            (row) =>
+              `<tr><td>${row.month}</td><td>${fmtCurrency(row.income)}</td><td>${fmtCurrency(row.expense)}</td></tr>`
+          )
+          .join("");
+      }
+
+      async function loadUsers() {
+        if (currentRole !== "admin") {
+          usersForm.classList.add("hidden");
+          usersBody.innerHTML = '<tr><td colspan="3">Admin access required.</td></tr>';
+          return;
+        }
+
+        usersForm.classList.remove("hidden");
+        const users = await api("/users");
+        usersBody.innerHTML = users.data
+          .map((user) => `<tr><td>${user.email}</td><td>${user.role}</td><td>${user.is_active ? "yes" : "no"}</td></tr>`)
+          .join("");
+      }
+
+      async function loadSupportTickets() {
+        if (!token) {
+          return;
+        }
+
+        const tickets = await api("/system/support-ticket");
+        if (!tickets.data.length) {
+          supportBody.innerHTML = '<tr><td colspan="4">No support tickets yet.</td></tr>';
+          return;
+        }
+
+        supportBody.innerHTML = tickets.data
+          .map(
+            (ticket) =>
+              `<tr><td>${ticket.created_at}</td><td>${ticket.priority}</td><td>${ticket.status}</td><td>${ticket.subject}</td></tr>`
+          )
+          .join("");
+      }
+
+      async function submitSupportTicket() {
+        const subject = document.getElementById("supportSubject").value.trim();
+        const message = document.getElementById("supportMessage").value.trim();
+        const priority = document.getElementById("supportPriority").value;
+
+        if (!subject || !message) {
+          setText(statusText, "Support ticket requires subject and message.");
+          return;
+        }
+
+        await api("/system/support-ticket", {
+          method: "POST",
+          body: JSON.stringify({ subject, message, priority }),
+        });
+
+        document.getElementById("supportSubject").value = "";
+        document.getElementById("supportMessage").value = "";
+        setText(statusText, "Support ticket submitted.");
+        await loadSupportTickets();
+      }
+
+      async function loadLogs() {
+        if (!token) {
+          return;
+        }
+
+        if (currentRole === "viewer") {
+          logsBody.innerHTML = '<tr><td colspan="4">Analyst/Admin access required.</td></tr>';
+          return;
+        }
+
+        const logs = await api("/system/logs?limit=25");
+        logsBody.innerHTML = logs.data
+          .map((entry) => `<tr><td>${entry.timestamp}</td><td>${entry.level}</td><td>${entry.event}</td><td>${entry.message}</td></tr>`)
+          .join("");
+      }
+
+      async function deployNode() {
+        if (!token) {
+          setText(statusText, "Authenticate before deploying.");
+          return;
+        }
+
+        if (currentRole !== "admin") {
+          setText(statusText, "Deploy requires admin role.");
+          return;
+        }
+
+        setText(statusText, "Deploying node...");
+        const deployment = await api("/system/deploy", {
+          method: "POST",
+          body: JSON.stringify({ target: "node-alpha" }),
+        });
+
+        setText(statusText, `Deploy complete: ${deployment.data.deployment_id.slice(0, 8)}...`);
+        await setActivePage("logs");
+      }
+
+      async function createUser() {
+        if (currentRole !== "admin") {
+          return;
+        }
+        const email = document.getElementById("newUserEmail").value.trim();
+        const password = document.getElementById("newUserPassword").value;
+        const role = document.getElementById("newUserRole").value;
+        if (!email || !password) {
+          statusText.textContent = "Admin create user failed: email and password required.";
+          return;
+        }
+
+        await api("/users", {
+          method: "POST",
+          body: JSON.stringify({ email, password, role }),
+        });
+
+        document.getElementById("newUserEmail").value = "";
+        statusText.textContent = "Admin user created successfully.";
+        await loadUsers();
+      }
+
+      async function exportCsv() {
+        try {
+          const params = buildRecordParams(false);
+          params.set("format", "csv");
+
+          const response = await fetch(`${API_BASE}/records?${params.toString()}`, {
+            headers: {
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`export failed (${response.status})`);
+          }
+
+          const blob = await response.blob();
+          const link = document.createElement("a");
+          const url = URL.createObjectURL(blob);
+          link.href = url;
+          link.download = "records_export.csv";
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(url);
+        } catch (error) {
+          setText(statusText, `Export failed: ${error.message}`);
+        }
+      }
+
+      async function checkHealth() {
+        try {
+          const response = await fetch(`${API_BASE}/health`);
+          const body = await response.json();
+          setText(healthChip, response.ok && body.success ? "Healthy" : "Unhealthy");
+        } catch {
+          setText(healthChip, "Unavailable");
+        }
+      }
+
+      async function setActivePage(page) {
+        activePage = page;
+
+        document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
+        document.querySelectorAll(`.nav-button[data-page='${page}']`).forEach((btn) => {
+          btn.closest(".nav-item").classList.add("active");
+        });
+
+        document.querySelectorAll(".page-fragment").forEach((section) => section.classList.remove("active"));
+        document.querySelectorAll(`.page-${page}`).forEach((section) => section.classList.add("active"));
+
+        const pageMap = {
+          overview: { title: "Overview", context: "Executive Snapshot / System View" },
+          records: { title: "Records", context: "Financial Records / Query Feed" },
+          analytics: { title: "Analytics", context: "Trend Intelligence / Category Breakdown" },
+          users: { title: "Users", context: "Identity & Access / Role Management" },
+          settings: { title: "Settings", context: "Profile & Session Configuration" },
+          support: { title: "Support", context: "Support Desk / Ticket Workflow" },
+          logs: { title: "Logs", context: "System Events / Audit Feed" },
+        };
+
+        pageTitle.textContent = pageMap[page].title;
+        topContext.textContent = pageMap[page].context;
+
+        if (token) {
+          if (page === "records") {
+            await loadDashboard();
+          }
+          if (page === "analytics") {
+            await loadInsights();
+          }
+          if (page === "users") {
+            await loadUsers();
+          }
+          if (page === "settings") {
+            await loadSettings();
+          }
+          if (page === "support") {
+            await loadSupportTickets();
+          }
+          if (page === "logs") {
+            await loadLogs();
+          }
+          if (page === "overview") {
+            await loadDashboard();
+            await loadInsights();
+          }
+        }
+      }
+
+      function setFiltersEnabled(enabled) {
+        const controls = filtersPanel.querySelectorAll("input, select, button");
+        controls.forEach((el) => {
+          el.disabled = !enabled;
+        });
+        filtersPanel.classList.toggle("filters-disabled", !enabled);
+      }
+
+      function resetFilters() {
+        qFilter.value = "";
+        typeFilter.value = "";
+        categoryFilter.value = "";
+        fromFilter.value = "";
+        toFilter.value = "";
+      }
+
+      async function resetFiltersAndReload() {
+        if (!token) {
+          setText(statusText, "Connect before resetting filters.");
+          return;
+        }
+
+        if (currentRole === "viewer") {
+          setText(statusText, "Viewer role does not have filter controls.");
+          return;
+        }
+
+        resetFilters();
+        currentPage = 1;
+
+        if (activePage !== "records") {
+          await setActivePage("records");
+        } else {
+          await loadDashboard();
+        }
+
+        setText(statusText, "Filters reset. Showing default records feed.");
+      }
+
+      async function connect() {
+        setText(statusText, "Connecting to backend...");
+        try {
+          const login = await api("/auth/login", {
+            method: "POST",
+            body: JSON.stringify({
+              email: document.getElementById("email").value,
+              password: document.getElementById("password").value,
+            }),
+          });
+
+          token = login.data.token;
+          currentRole = login.data.user.role;
+          currentPage = 1;
+          setText(sessionRole, `Session: ${currentRole}`);
+          setText(roleChip, currentRole);
+
+          if (currentRole === "viewer") {
+            setFiltersEnabled(false);
+            setText(statusText, "Connected. Viewer role is read-only without filters/search.");
+          } else {
+            setFiltersEnabled(true);
+            setText(statusText, "Connected. Use filters/search for analyst/admin records queries.");
+          }
+
+          await checkHealth();
+          await setActivePage(activePage);
+        } catch (error) {
+          setText(statusText, `Connection failed: ${error.message}`);
+        }
+      }
+
+      document.getElementById("connectBtn").addEventListener("click", connect);
+      document.getElementById("applyFiltersBtn").addEventListener("click", () => {
+        currentPage = 1;
+        loadDashboard().catch((error) => {
+          setText(statusText, `Filter query failed: ${error.message}`);
+        });
+      });
+      document.getElementById("resetFiltersBtn").addEventListener("click", () => {
+        resetFiltersAndReload().catch((error) => {
+          setText(statusText, `Refresh failed: ${error.message}`);
+        });
+      });
+      document.getElementById("exportBtn").addEventListener("click", exportCsv);
+      document.getElementById("refreshSettingsBtn").addEventListener("click", () => {
+        loadSettings().catch((error) => {
+          setText(statusText, `Settings refresh failed: ${error.message}`);
+        });
+      });
+      document.getElementById("refreshLogsBtn").addEventListener("click", () => {
+        loadLogs().catch((error) => {
+          setText(statusText, `Logs refresh failed: ${error.message}`);
+        });
+      });
+      document.getElementById("submitSupportBtn").addEventListener("click", () => {
+        submitSupportTicket().catch((error) => {
+          setText(statusText, `Support ticket failed: ${error.message}`);
+        });
+      });
+      document.getElementById("deployNodeBtn").addEventListener("click", () => {
+        deployNode().catch((error) => {
+          setText(statusText, `Deploy failed: ${error.message}`);
+        });
+      });
+
+      document.querySelectorAll(".nav-button").forEach((button) => {
+        button.addEventListener("click", () => {
+          const page = button.dataset.page;
+          setActivePage(page).catch((error) => {
+            setText(statusText, `Page load failed: ${error.message}`);
+          });
+        });
+      });
+
+      document.getElementById("createUserBtn").addEventListener("click", () => {
+        createUser().catch((error) => {
+          setText(statusText, `Admin create user failed: ${error.message}`);
+        });
+      });
+      prevPageBtn.addEventListener("click", () => {
+        if (currentPage <= 1) {
+          return;
+        }
+        currentPage -= 1;
+        loadDashboard().catch((error) => {
+          setText(statusText, `Pagination failed: ${error.message}`);
+        });
+      });
+      nextPageBtn.addEventListener("click", () => {
+        currentPage += 1;
+        loadDashboard().catch((error) => {
+          setText(statusText, `Pagination failed: ${error.message}`);
+        });
+      });
+
+      setFiltersEnabled(false);
+      connect();
+    </script>
+  </body>
+</html>
