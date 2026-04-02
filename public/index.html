@@ -201,6 +201,18 @@
         text-transform: uppercase;
         letter-spacing: 0.08em;
         padding: 9px 12px;
+        transition: border-color 160ms ease, background-color 160ms ease;
+      }
+
+      .query-box:focus {
+        outline: none;
+        border-color: rgba(0, 240, 255, 0.6);
+        background: rgba(14, 19, 27, 0.98);
+        box-shadow: inset 0 -2px 0 rgba(0, 240, 255, 0.5), 0 0 20px -10px rgba(0, 240, 255, 0.6);
+      }
+
+      #topQueryBtn {
+        min-width: 100px;
       }
 
       .top {
@@ -826,8 +838,8 @@
           <a class="top-link" data-page="features" href="#">Features</a>
           <a class="top-link" data-page="api" href="#">API</a>
           <a class="top-link" data-page="security" href="#">Security</a>
-          <input class="query-box" title="Query ledger" value="Query ledger..." readonly />
-          <button class="launch-btn" type="button">Launch Terminal</button>
+          <input id="topQueryBox" class="query-box" title="Query ledger hash, counterparty, or notes" placeholder="Query ledger..." />
+          <button id="topQueryBtn" class="launch-btn" type="button">Search</button>
         </section>
 
         <section class="glass auth">
@@ -1721,6 +1733,45 @@
         currentPage += 1;
         loadDashboard().catch((error) => {
           setText(statusText, `Pagination failed: ${error.message}`);
+        });
+      });
+
+      async function performTopQuery() {
+        const query = document.getElementById("topQueryBox").value.trim();
+        if (!query) {
+          setText(statusText, "Please enter a search term");
+          return;
+        }
+        if (!token) {
+          setText(statusText, "Please connect to API first");
+          return;
+        }
+        if (currentRole === "viewer") {
+          setText(statusText, "Viewer role cannot use query search");
+          return;
+        }
+
+        // Set the filter value
+        qFilter.value = query;
+        currentPage = 1;
+
+        // Switch to records page and load
+        await setActivePage("records");
+        await loadDashboard();
+        setText(statusText, `Query executed for: "${query}"`);
+      }
+
+      document.getElementById("topQueryBox").addEventListener("keypress", (event) => {
+        if (event.key === "Enter") {
+          performTopQuery().catch((error) => {
+            setText(statusText, `Query failed: ${error.message}`);
+          });
+        }
+      });
+
+      document.getElementById("topQueryBtn").addEventListener("click", () => {
+        performTopQuery().catch((error) => {
+          setText(statusText, `Query failed: ${error.message}`);
         });
       });
 
