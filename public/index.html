@@ -822,10 +822,10 @@
         </section>
 
         <section class="top-strip">
-          <a class="active-link" href="/hero.html">Home</a>
-          <a href="/features.html">Features</a>
-          <a href="/api.html">API</a>
-          <a href="/security.html">Security</a>
+          <a class="active-link top-link" data-page="overview" href="#">Home</a>
+          <a class="top-link" data-page="features" href="#">Features</a>
+          <a class="top-link" data-page="api" href="#">API</a>
+          <a class="top-link" data-page="security" href="#">Security</a>
           <input class="query-box" title="Query ledger" value="Query ledger..." readonly />
           <button class="launch-btn" type="button">Launch Terminal</button>
         </section>
@@ -1044,6 +1044,53 @@
             <tbody id="logsBody"></tbody>
           </table>
         </section>
+
+        <section class="glass users-wrap page-fragment page-features" id="featuresPage">
+          <div class="eyebrow">Platform Features</div>
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Status</th>
+                <th>Scope</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody id="featuresBody"></tbody>
+          </table>
+        </section>
+
+        <section class="glass users-wrap page-fragment page-api" id="apiPage">
+          <div class="eyebrow">API Operations</div>
+          <div class="logs-tools">
+            <button id="refreshApiBtn" class="btn-muted" type="button">Run API Checks</button>
+          </div>
+          <table class="users-table logs-table">
+            <thead>
+              <tr>
+                <th>Endpoint</th>
+                <th>Method</th>
+                <th>Status</th>
+                <th>Message</th>
+              </tr>
+            </thead>
+            <tbody id="apiBody"></tbody>
+          </table>
+        </section>
+
+        <section class="glass users-wrap page-fragment page-security" id="securityPage">
+          <div class="eyebrow">Security Controls</div>
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>Control</th>
+                <th>Status</th>
+                <th>Evidence</th>
+              </tr>
+            </thead>
+            <tbody id="securityBody"></tbody>
+          </table>
+        </section>
       </main>
     </div>
 
@@ -1074,6 +1121,9 @@
       const pageTitle = document.getElementById("pageTitle");
       const logsBody = document.getElementById("logsBody");
       const supportBody = document.getElementById("supportBody");
+      const featuresBody = document.getElementById("featuresBody");
+      const apiBody = document.getElementById("apiBody");
+      const securityBody = document.getElementById("securityBody");
       const qFilter = document.getElementById("qFilter");
       const typeFilter = document.getElementById("typeFilter");
       const categoryFilter = document.getElementById("categoryFilter");
@@ -1300,6 +1350,84 @@
           .join("");
       }
 
+      function setTopLink(page) {
+        document.querySelectorAll(".top-link").forEach((link) => {
+          link.classList.toggle("active-link", link.dataset.page === page);
+        });
+      }
+
+      async function loadFeatures() {
+        const featureRows = [
+          ["JWT Authentication", "online", "all users", "Token-based login and guarded routes"],
+          ["RBAC Access Control", "online", "viewer/analyst/admin", `Current role: ${currentRole}`],
+          ["Records Query + CSV", "online", "analyst/admin", "Filters, paging and export pipeline"],
+          ["System Support Desk", "online", "authenticated", "Ticket create and list in dashboard"],
+          ["Node Deployment", currentRole === "admin" ? "enabled" : "restricted", "admin", "Deploy action is admin-only"],
+        ];
+
+        featuresBody.innerHTML = featureRows
+          .map((row) => `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td></tr>`)
+          .join("");
+      }
+
+      async function loadApiChecks() {
+        const checks = [
+          { endpoint: "/api/v1/health", method: "GET", auth: false },
+          { endpoint: "/api/v1/dashboard/summary", method: "GET", auth: true },
+          { endpoint: "/api/v1/dashboard/by-category", method: "GET", auth: true },
+          { endpoint: "/api/v1/system/logs?limit=5", method: "GET", auth: true },
+        ];
+
+        const rows = [];
+        for (const check of checks) {
+          try {
+            const response = await fetch(`${API_BASE}${check.endpoint}`, {
+              method: check.method,
+              headers: {
+                ...(check.auth && token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+            });
+            const body = await response.json();
+            rows.push([
+              check.endpoint,
+              check.method,
+              response.status,
+              body.success ? "success" : body.error?.message || "failed",
+            ]);
+          } catch (error) {
+            rows.push([check.endpoint, check.method, "ERR", error.message]);
+          }
+        }
+
+        apiBody.innerHTML = rows.map((row) => `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td></tr>`).join("");
+      }
+
+      async function loadSecurity() {
+        const controls = [];
+        controls.push(["Authentication", token ? "enabled" : "inactive", token ? "JWT token in session" : "Not connected"]);
+        controls.push(["Role Enforcement", "enabled", `Current role: ${currentRole}`]);
+
+        try {
+          if (token) {
+            const me = await api("/users/me");
+            controls.push(["Identity Check", "passed", `${me.data.email} (${me.data.role})`]);
+          } else {
+            controls.push(["Identity Check", "skipped", "Connect API to validate identity"]);
+          }
+        } catch (error) {
+          controls.push(["Identity Check", "failed", error.message]);
+        }
+
+        try {
+          const health = await fetch(`${API_BASE}/health`);
+          controls.push(["Service Health", health.ok ? "healthy" : "degraded", `HTTP ${health.status}`]);
+        } catch {
+          controls.push(["Service Health", "offline", "Health endpoint unavailable"]);
+        }
+
+        securityBody.innerHTML = controls.map((row) => `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td></tr>`).join("");
+      }
+
       async function deployNode() {
         if (!token) {
           setText(statusText, "Authenticate before deploying.");
@@ -1401,7 +1529,12 @@
           settings: { title: "Settings", context: "Profile & Session Configuration" },
           support: { title: "Support", context: "Support Desk / Ticket Workflow" },
           logs: { title: "Logs", context: "System Events / Audit Feed" },
+          features: { title: "Features", context: "Product Capabilities / Operational Matrix" },
+          api: { title: "API", context: "Endpoint Status / Runtime Diagnostics" },
+          security: { title: "Security", context: "Controls / Authentication / Role Enforcement" },
         };
+
+        setTopLink(page === "overview" || page === "records" || page === "analytics" || page === "users" || page === "settings" || page === "support" || page === "logs" ? "overview" : page);
 
         pageTitle.textContent = pageMap[page].title;
         topContext.textContent = pageMap[page].context;
@@ -1424,6 +1557,15 @@
           }
           if (page === "logs") {
             await loadLogs();
+          }
+          if (page === "features") {
+            await loadFeatures();
+          }
+          if (page === "api") {
+            await loadApiChecks();
+          }
+          if (page === "security") {
+            await loadSecurity();
           }
           if (page === "overview") {
             await loadDashboard();
@@ -1526,6 +1668,11 @@
           setText(statusText, `Logs refresh failed: ${error.message}`);
         });
       });
+      document.getElementById("refreshApiBtn").addEventListener("click", () => {
+        loadApiChecks().catch((error) => {
+          setText(statusText, `API checks failed: ${error.message}`);
+        });
+      });
       document.getElementById("submitSupportBtn").addEventListener("click", () => {
         submitSupportTicket().catch((error) => {
           setText(statusText, `Support ticket failed: ${error.message}`);
@@ -1542,6 +1689,16 @@
           const page = button.dataset.page;
           setActivePage(page).catch((error) => {
             setText(statusText, `Page load failed: ${error.message}`);
+          });
+        });
+      });
+
+      document.querySelectorAll(".top-link").forEach((link) => {
+        link.addEventListener("click", (event) => {
+          event.preventDefault();
+          const page = link.dataset.page;
+          setActivePage(page).catch((error) => {
+            setText(statusText, `Top navigation failed: ${error.message}`);
           });
         });
       });
