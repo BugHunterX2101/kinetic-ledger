@@ -9,6 +9,9 @@ const { sendSuccess, sendError } = require("../../utils/response");
 
 const router = express.Router();
 
+// Apply authentication to all system routes (consistent with other route modules)
+router.use(authenticate);
+
 const supportTickets = [];
 const deployments = [];
 
@@ -18,7 +21,7 @@ const supportTicketSchema = z.object({
   priority: z.enum(["low", "normal", "high"]).optional().default("normal"),
 });
 
-router.get("/logs", authenticate, authorise(["analyst", "admin"]), (req, res) => {
+router.get("/logs", authorise(["analyst", "admin"]), (req, res) => {
   const limitRaw = Number(req.query.limit || 20);
   const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(Math.trunc(limitRaw), 1), 100) : 20;
 
@@ -60,7 +63,7 @@ router.get("/logs", authenticate, authorise(["analyst", "admin"]), (req, res) =>
   return sendSuccess(res, logs);
 });
 
-router.post("/support-ticket", authenticate, (req, res) => {
+router.post("/support-ticket", (req, res) => {
   const parsed = supportTicketSchema.safeParse(req.body);
   if (!parsed.success) {
     return sendError(res, 400, "Invalid support ticket payload", parsed.error.flatten());
@@ -80,7 +83,7 @@ router.post("/support-ticket", authenticate, (req, res) => {
   return sendSuccess(res, ticket, null, 201);
 });
 
-router.get("/support-ticket", authenticate, (req, res) => {
+router.get("/support-ticket", (req, res) => {
   const data =
     req.user.role === "admin"
       ? supportTickets
@@ -89,7 +92,7 @@ router.get("/support-ticket", authenticate, (req, res) => {
   return sendSuccess(res, data.slice(0, 50));
 });
 
-router.post("/deploy", authenticate, authorise(["admin"]), (req, res) => {
+router.post("/deploy", authorise(["admin"]), (req, res) => {
   const target = typeof req.body?.target === "string" && req.body.target.trim() ? req.body.target.trim() : "node-alpha";
 
   const deployment = {

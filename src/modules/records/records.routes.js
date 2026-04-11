@@ -8,6 +8,10 @@ const { sendError, sendSuccess } = require("../../utils/response");
 
 const router = express.Router();
 
+const ALLOWED_RECORD_COLUMNS = new Set([
+  "amount", "type", "category", "date", "notes", "ledger_hash", "counterparty", "status",
+]);
+
 const createRecordSchema = z.object({
   amount: z.number().refine((v) => v !== 0, "must be non-zero"),
   type: z.enum(["income", "expense"]),
@@ -19,9 +23,21 @@ const createRecordSchema = z.object({
   status: z.enum(["verified", "flagged", "pending"]).optional(),
 });
 
-const updateRecordSchema = createRecordSchema.partial().refine((data) => Object.keys(data).length > 0, {
-  message: "At least one field is required",
-});
+// Define update schema independently to avoid partial() losing inner refinements
+const updateRecordSchema = z
+  .object({
+    amount: z.number().refine((v) => v !== 0, "must be non-zero").optional(),
+    type: z.enum(["income", "expense"]).optional(),
+    category: z.string().min(1).max(100).optional(),
+    date: z.string().date().optional(),
+    notes: z.string().max(500).optional().nullable(),
+    ledger_hash: z.string().max(120).optional().nullable(),
+    counterparty: z.string().max(120).optional().nullable(),
+    status: z.enum(["verified", "flagged", "pending"]).optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field is required",
+  });
 
 router.use(authenticate);
 
@@ -164,10 +180,18 @@ router.patch("/:id", authorise(["admin"]), (req, res) => {
   const updates = [];
   const values = [];
 
+  // Only iterate keys that map to real DB columns and have defined values
   for (const [key, value] of Object.entries(parsed.data)) {
+    if (value === undefined) continue;
+    if (!ALLOWED_RECORD_COLUMNS.has(key)) continue;
     updates.push(`${key} = ?`);
     values.push(value);
   }
+
+  if (updates.length === 0) {
+    return sendError(res, 422, "No valid fields provided for update");
+  }
+
   updates.push("updated_at = CURRENT_TIMESTAMP");
 
   values.push(req.params.id);

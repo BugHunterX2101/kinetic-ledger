@@ -983,7 +983,7 @@
           <div class="eyebrow">Admin User Management</div>
           <div class="users-form users-form-top" id="usersForm">
             <input id="newUserEmail" type="email" placeholder="new user email" />
-            <input id="newUserPassword" type="text" placeholder="temporary password" value="TempPass@123" />
+            <input id="newUserPassword" type="password" placeholder="temporary password" />
             <select id="newUserRole" title="New user role">
               <option value="viewer">viewer</option>
               <option value="analyst">analyst</option>
@@ -1261,13 +1261,17 @@
       }
 
       async function loadInsights() {
-        const recent = await api("/dashboard/recent?limit=10");
-        recentActivityBody.innerHTML = recent.data
-          .map(
-            (row) =>
-              `<tr><td>${row.ledger_hash || "-"}</td><td>${row.counterparty || row.category || "Node"}</td><td>${statusBadge(row.status || "verified")}</td></tr>`
-          )
-          .join("");
+        try {
+          const recent = await api("/dashboard/recent?limit=10");
+          recentActivityBody.innerHTML = recent.data
+            .map(
+              (row) =>
+                `<tr><td>${row.ledger_hash || "-"}</td><td>${row.counterparty || row.category || "Node"}</td><td>${statusBadge(row.status || "verified")}</td></tr>`
+            )
+            .join("");
+        } catch (error) {
+          recentActivityBody.innerHTML = `<tr><td colspan="3">Failed to load recent activity: ${error.message}</td></tr>`;
+        }
 
         if (currentRole === "viewer") {
           categoryBody.innerHTML = '<tr><td colspan="3">Analyst/Admin only</td></tr>';
@@ -1275,21 +1279,29 @@
           return;
         }
 
-        const category = await api("/dashboard/by-category");
-        categoryBody.innerHTML = category.data
-          .map(
-            (row) =>
-              `<tr><td>${row.category}</td><td>${fmtCurrency(row.income)}</td><td>${fmtCurrency(row.expense)}</td></tr>`
-          )
-          .join("");
+        try {
+          const category = await api("/dashboard/by-category");
+          categoryBody.innerHTML = category.data
+            .map(
+              (row) =>
+                `<tr><td>${row.category}</td><td>${fmtCurrency(row.income)}</td><td>${fmtCurrency(row.expense)}</td></tr>`
+            )
+            .join("");
+        } catch (error) {
+          categoryBody.innerHTML = `<tr><td colspan="3">Failed to load categories: ${error.message}</td></tr>`;
+        }
 
-        const trends = await api("/dashboard/trends");
-        trendsBody.innerHTML = trends.data
-          .map(
-            (row) =>
-              `<tr><td>${row.month}</td><td>${fmtCurrency(row.income)}</td><td>${fmtCurrency(row.expense)}</td></tr>`
-          )
-          .join("");
+        try {
+          const trends = await api("/dashboard/trends");
+          trendsBody.innerHTML = trends.data
+            .map(
+              (row) =>
+                `<tr><td>${row.month}</td><td>${fmtCurrency(row.income)}</td><td>${fmtCurrency(row.expense)}</td></tr>`
+            )
+            .join("");
+        } catch (error) {
+          trendsBody.innerHTML = `<tr><td colspan="3">Failed to load trends: ${error.message}</td></tr>`;
+        }
       }
 
       async function loadUsers() {
@@ -1479,6 +1491,7 @@
         });
 
         document.getElementById("newUserEmail").value = "";
+        document.getElementById("newUserPassword").value = "";
         statusText.textContent = "Admin user created successfully.";
         await loadUsers();
       }
@@ -1776,7 +1789,8 @@
       });
 
       setFiltersEnabled(false);
-      connect();
+      // Do not auto-connect on load; user must enter credentials and click Connect
+      checkHealth();
     </script>
   </body>
 </html>
